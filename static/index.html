@@ -7,7 +7,21 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>Ubiquity TypeScript Template</h1>
+    <h1>ubq.fi.demo</h1>
+    <background></background>
+    <main id="demo">
+      <div id="idle-jobs"></div>
+      <div id="active-job">
+        <span id="active-job__title"></span>
+        <span id="active-job__description"></span>
+        <div id="active-job__prompt-response"></div>
+        <form id="active-job__prompt-input">
+          <input type="text" id="myInput" placeholder="Enter text" />
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+      <div id="completed-jobs"></div>
+    </main>
     <script type="module" src="dist/main.js"></script>
   </body>
 </html>
