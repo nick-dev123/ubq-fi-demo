@@ -8,8 +8,15 @@ const ACTIVE_JOB_DESCRIPTION_SELECTOR = "#active-job__description";
 const ACTIVE_JOB_TITLE_SELECTOR = "#active-job__title";
 
 const DEMO_JOB1_TITLE = "Sample Job";
-const DEMO_JOB1_DESCRIPTION =
-  "Welcome. This is a simple job. You can complete it by setting your wallet address, type /wallet {YOUR_WALLET}) and /start afterwards";
+const DEMO_JOB1_DESCRIPTION = `
+    <p>Welcome. This is a simple intro job.</p>
+    <p>You can complete it by setting your wallet address, and starting the job.</p>
+    <p>Hint:</p>
+    <ol>
+        <li> type /wallet {YOUR_WALLET}) </li>
+        <li> type /start</li>
+    </ol>
+`;
 
 export {
   DEMO_SELECTOR,
