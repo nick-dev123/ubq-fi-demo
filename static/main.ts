@@ -21,13 +21,16 @@ export async function mainModule() {
     promptHistory: PromptEvent[];
     deadline: Date | undefined;
     demo: Demo;
+    // Gets called after every prompt, if true the job is completed
+    promptCallback: (evt: PromptEvent) => boolean;
 
-    constructor(name: string, description: string) {
+    constructor(name: string, description: string, promptCallback: (evt: PromptEvent) => boolean) {
       this.name = name;
       this.demo = demo;
       this.description = description;
       this.status = "idle";
       this.promptHistory = [];
+      this.promptCallback = promptCallback;
     }
 
     private _start() {
@@ -37,7 +40,7 @@ export async function mainModule() {
       }
       const length = this.promptHistory.push({
         timestamp: new Date(),
-        command: "help",
+        command: "start",
         response: undefined,
         status: "in_progress",
       });
@@ -170,6 +173,7 @@ export async function mainModule() {
         timestamp: new Date(),
         command: "stop",
         response: promptResponse,
+        // TODO
         status: "in_progress",
       });
     }
@@ -200,6 +204,12 @@ export async function mainModule() {
         this._stop();
       } else {
         this._invalidPrompt();
+      }
+      const isCompleted = this.promptCallback(this.promptHistory[this.promptHistory.length - 1]);
+      console.log(isCompleted);
+      if (isCompleted) {
+        console.log("Completed");
+        this.status = "completed";
       }
     }
   }
@@ -355,14 +365,19 @@ export async function mainModule() {
     }
 
     createJobs() {
-      this.jobs.push(new Job(DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION));
-      this.jobs.push(new Job("asd2", "asd"));
+      this.jobs.push(new Job(DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, demo1Logic));
+      // this.jobs.push(new Job("asd2", "asd"));
       this.view.displayIdleJobs(this.jobs);
     }
   }
 
   const demo = new Demo();
   demo.createJobs();
+
+  function demo1Logic(evt: PromptEvent) {
+    console.log(evt);
+    return !!(evt.command === "start" && demo.user.address);
+  }
 
   return demo;
 }
