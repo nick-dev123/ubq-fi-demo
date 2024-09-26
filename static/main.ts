@@ -187,6 +187,18 @@ export async function mainModule() {
       });
     }
 
+    private _invalidPrompt() {
+      this.promptHistory.push({
+        timestamp: new Date(),
+        command: "stop",
+        response: {
+          title: "",
+          md: '<span class="pl-bad">!Invalid prompt</span>',
+        },
+        status: "in_progress",
+      });
+    }
+
     prompt(text: string) {
       const walletRegex = /\/wallet\s(0x[a-fA-F0-9]{40})/;
       const match = text.match(walletRegex);
@@ -200,7 +212,7 @@ export async function mainModule() {
       } else if (text === "/stop") {
         this._stop();
       } else {
-        throw new Error("Invalid prompt");
+        this._invalidPrompt();
       }
     }
   }
@@ -241,18 +253,18 @@ export async function mainModule() {
         job.innerHTML = `
             <div>
               <span>${idleJobs[i].name}</span>
-              <span>${idleJobs[i].id}</span>
-              <span>${idleJobs[i].status}</span>
             </div>
-            <button>
-              2400 USD
-            </button>
-            <button>
-              <2 Weeks
-            </button>
-            <button>
-              3 (High)
-            </button>
+            <div class="idle-jobs__job__details">
+              <div>
+                2400 USD
+              </div>
+              <div>
+                <2 Weeks
+              </div>
+              <div>
+                3 (High)
+              </div>
+            </div>
         `;
         job.addEventListener("click", () => {
           demo.selectJob(idleJobs[i]);
