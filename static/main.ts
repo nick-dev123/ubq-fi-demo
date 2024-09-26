@@ -1,7 +1,7 @@
+import { ACTIVE_JOB_SELECTOR, COMPLETED_JOBS_SELECTOR, DEMO_SELECTOR, IDLE_JOBS_SELECTOR, PROMPT_INPUT_SELECTOR, PROMPT_RESPONSE_SELECTOR } from "./constants";
 import { PromptEvent, Status, User } from "./types";
 
 export async function mainModule() {
-  // job
   class Job {
     id = (Math.random() + 1).toString(36);
     name: string;
@@ -195,20 +195,20 @@ export async function mainModule() {
 
   // View
   class View {
-    jobs: HTMLElement;
+    demo: HTMLElement;
     activeJob: HTMLElement;
     idleJobs: HTMLElement;
     completedJobs: HTMLElement;
     prompt: HTMLElement;
-    // promptResponse: HTMLElement;
+    promptResponse: HTMLElement;
 
     constructor() {
-      this.jobs = document.getElementById("demo") as HTMLElement;
-      this.idleJobs = this.jobs.querySelector("#idle-jobs") as HTMLElement;
-      this.activeJob = this.jobs.querySelector("#active-job") as HTMLElement;
-      this.completedJobs = this.jobs.querySelector("#completed-jobs") as HTMLElement;
-      this.prompt = this.activeJob.querySelector("#active-job__prompt-input") as HTMLElement;
-      // this.promptResponse = this.activeJob.querySelector("#active-job__prompt-response") as HTMLElement;
+      this.demo = document.getElementById(DEMO_SELECTOR) as HTMLElement;
+      this.idleJobs = this.demo.querySelector(IDLE_JOBS_SELECTOR) as HTMLElement;
+      this.activeJob = this.demo.querySelector(ACTIVE_JOB_SELECTOR) as HTMLElement;
+      this.completedJobs = this.demo.querySelector(COMPLETED_JOBS_SELECTOR) as HTMLElement;
+      this.prompt = this.activeJob.querySelector(PROMPT_INPUT_SELECTOR) as HTMLElement;
+      this.promptResponse = this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement;
 
       this.activeJob.addEventListener("drag", () => {});
       this.prompt.addEventListener("submit", (event) => {
