@@ -1,4 +1,15 @@
-import { ACTIVE_JOB_SELECTOR, COMPLETED_JOBS_SELECTOR, DEMO_SELECTOR, IDLE_JOBS_SELECTOR, PROMPT_INPUT_SELECTOR, PROMPT_RESPONSE_SELECTOR } from "./constants";
+import {
+  ACTIVE_JOB_DESCRIPTION_SELECTOR,
+  ACTIVE_JOB_SELECTOR,
+  ACTIVE_JOB_TITLE_SELECTOR,
+  COMPLETED_JOBS_SELECTOR,
+  DEMO_JOB1_DESCRIPTION,
+  DEMO_JOB1_TITLE,
+  DEMO_SELECTOR,
+  IDLE_JOBS_SELECTOR,
+  PROMPT_INPUT_SELECTOR,
+  PROMPT_RESPONSE_SELECTOR,
+} from "./constants";
 import { PromptEvent, Status, User } from "./types";
 
 export async function mainModule() {
@@ -253,10 +264,10 @@ export async function mainModule() {
       if (!job) {
         return;
       }
-      (this.activeJob.querySelector("#active-job__title") as HTMLElement).innerHTML = job.name;
-      (this.activeJob.querySelector("#active-job__description") as HTMLElement).innerHTML = job.description;
+      (this.activeJob.querySelector(ACTIVE_JOB_TITLE_SELECTOR) as HTMLElement).innerHTML = job.name;
+      (this.activeJob.querySelector(ACTIVE_JOB_DESCRIPTION_SELECTOR) as HTMLElement).innerHTML = job.description;
       // TODO Display prompt history
-      (this.activeJob.querySelector("#active-job__prompt-response") as HTMLElement).innerHTML = "";
+      (this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement).innerHTML = "";
     }
 
     displayPromptHistory(promptHistory: PromptEvent[]) {
@@ -344,7 +355,7 @@ export async function mainModule() {
     }
 
     createJobs() {
-      this.jobs.push(new Job("asd", "asd"));
+      this.jobs.push(new Job(DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION));
       this.jobs.push(new Job("asd2", "asd"));
       this.view.displayIdleJobs(this.jobs);
     }
