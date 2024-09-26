@@ -1,30 +1,6 @@
+import { PromptEvent, Status, User } from "./types";
+
 export async function mainModule() {
-  type Command = "help" | "start" | "stop" | "wallet";
-
-  type Status = "idle" | "selected" | "in_progress" | "stopped" | "completed" | "rewarded";
-
-  type PromptEvent = {
-    timestamp: Date;
-    command: Command;
-    response: PromptResponse | undefined;
-    status: "submitted" | "in_progress" | "responded" | "rejected";
-  };
-
-  type Notification = {
-    title: string;
-    description: string;
-  };
-
-  type PromptResponse = {
-    title: string;
-    // Contains the markdown response
-    md: string;
-  };
-
-  type User = {
-    address: string | null;
-  };
-
   // job
   class Job {
     id = (Math.random() + 1).toString(36);
