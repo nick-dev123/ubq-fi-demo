@@ -39,12 +39,32 @@ main {
     min-width: 400px;
 
     .idle-jobs__job {
+      cursor: pointer;
       display: flex;
-      flex-direction: row;
-      width: 100%;
+      flex-direction: column;
+      width: 90%;
       gap: 6px;
-      justify-content: space-evenly;
-      margin: 12px 6px;
+      margin: 12px auto;
+      background-color: black;
+      padding: 4px 8px;
+
+      .idle-jobs__job__details {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-evenly;
+        gap: 2px;
+
+        div {
+          background-color: grey;
+          width: 30%;
+          padding: 4px;
+          margin-bottom: 4px;
+          text-align: center;
+        }
+      }
+    }
+    .idle-jobs__job:hover {
+      border: 1px solid red;
     }
   }
 
