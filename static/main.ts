@@ -11,61 +11,61 @@ import {
   PROMPT_RESPONSE_SELECTOR,
 } from "./constants";
 import { PromptEvent, Status, User } from "./types";
+import { allowDrop, drag, dragover, drop } from "./drag";
 
-export async function mainModule() {
-  class Job {
-    id = (Math.random() + 1).toString(36);
-    name: string;
-    description: string;
-    status: Status;
-    promptHistory: PromptEvent[];
-    deadline: Date | undefined;
-    demo: Demo;
-    // Gets called after every prompt, if true the job is completed
-    promptCallback: (evt: PromptEvent) => boolean;
+class Job {
+  id = (Math.random() + 1).toString(36);
+  name: string;
+  description: string;
+  status: Status;
+  promptHistory: PromptEvent[];
+  deadline: Date | undefined;
+  demo: Demo;
+  // Gets called after every prompt, if true the job is completed
+  promptCallback: (demo: Demo, evt: PromptEvent) => boolean;
 
-    constructor(name: string, description: string, promptCallback: (evt: PromptEvent) => boolean) {
-      this.name = name;
-      this.demo = demo;
-      this.description = description;
-      this.status = "idle";
-      this.promptHistory = [];
-      this.promptCallback = promptCallback;
+  constructor(demo: Demo, name: string, description: string, promptCallback: (demo: Demo, evt: PromptEvent) => boolean) {
+    this.name = name;
+    this.demo = demo;
+    this.description = description;
+    this.status = "idle";
+    this.promptHistory = [];
+    this.promptCallback = promptCallback;
+  }
+
+  private _start() {
+    if (this.status !== "selected") {
+      this.demo.addNotification("Error", "Cannot start non-idle job");
+      throw new Error("Cannot start job");
     }
+    const length = this.promptHistory.push({
+      timestamp: new Date(),
+      command: "start",
+      response: undefined,
+      status: "in_progress",
+    });
 
-    private _start() {
-      if (this.status !== "selected") {
-        demo.addNotification("Error", "Cannot start non-idle job");
-        throw new Error("Cannot start job");
-      }
-      const length = this.promptHistory.push({
-        timestamp: new Date(),
-        command: "start",
-        response: undefined,
-        status: "in_progress",
-      });
-
-      if (!demo.user || !demo.user.address) {
-        const promptResponse = {
-          title: "",
-          md: '<span class="pl-mc">!</span> Please set your wallet address with the /wallet command first and try again.',
-        };
-        this.promptHistory[length - 1].response = promptResponse;
-        this.promptHistory[length - 1].status = "rejected";
-        throw new Error("You must set your wallet address");
-      }
-      this.status = "in_progress";
-      this.deadline = new Date("Tue, Sep 24, 11:20 PM UTC");
-
+    if (!this.demo.user || !this.demo.user.address) {
       const promptResponse = {
         title: "",
-        md: `
+        md: '<span class="pl-mc">!</span> Please set your wallet address with the /wallet command first and try again.',
+      };
+      this.promptHistory[length - 1].response = promptResponse;
+      this.promptHistory[length - 1].status = "rejected";
+      throw new Error("You must set your wallet address");
+    }
+    this.status = "in_progress";
+    this.deadline = new Date("Tue, Sep 24, 11:20 PM UTC");
+
+    const promptResponse = {
+      title: "",
+      md: `
             <samp>
               <table>
                   <tr><td>Deadline</td><td>${+this.deadline}</td></tr>
                   <tr>
                   <td>Beneficiary</td>
-                  <td>${demo.user.address}</td>
+                  <td>${this.demo.user.address}</td>
                   </tr>
               </table>
             </samp>
@@ -76,35 +76,35 @@ export async function mainModule() {
               <li>Be sure to provide timely updates to us when requested, or you will be automatically unassigned from the task.</li>
             <ul>
         `,
-      };
-      this.promptHistory[length - 1].response = promptResponse;
+    };
+    this.promptHistory[length - 1].response = promptResponse;
+  }
+
+  private _stop() {
+    if (this.status !== "in_progress") {
+      this.demo.addNotification("Error", "Cannot stop non-in-progress job");
+      throw new Error("Cannot stop job");
     }
+    this.status = "stopped";
 
-    private _stop() {
-      if (this.status !== "in_progress") {
-        demo.addNotification("Error", "Cannot stop non-in-progress job");
-        throw new Error("Cannot stop job");
-      }
-      this.status = "stopped";
+    // TODO
+    const promptResponse = {
+      title: "STOP",
+      md: '<span class="pl-mil">+ Successfully registered wallet address</span>',
+    };
 
-      // TODO
-      const promptResponse = {
-        title: "STOP",
-        md: '<span class="pl-mil">+ Successfully registered wallet address</span>',
-      };
+    this.promptHistory.push({
+      timestamp: new Date(),
+      command: "stop",
+      response: promptResponse,
+      status: "in_progress",
+    });
+  }
 
-      this.promptHistory.push({
-        timestamp: new Date(),
-        command: "stop",
-        response: promptResponse,
-        status: "in_progress",
-      });
-    }
-
-    private _help() {
-      const promptResponse = {
-        title: "Available commands",
-        md: `
+  private _help() {
+    const promptResponse = {
+      title: "Available commands",
+      md: `
             <table>
               <thead>
                 <tr>
@@ -148,106 +148,129 @@ export async function mainModule() {
           </table>
 
           `,
-      };
+    };
 
-      this.promptHistory.push({
-        timestamp: new Date(),
-        command: "help",
-        response: promptResponse,
-        status: "in_progress",
-      });
-    }
-
-    private _wallet(address: string) {
-      if (!demo.user) {
-        throw new Error("Missing global user object");
-      }
-      demo.user.address = address;
-
-      const promptResponse = {
-        title: "",
-        md: '<span class="pl-mil">+ Successfully registered wallet address</span>',
-      };
-
-      this.promptHistory.push({
-        timestamp: new Date(),
-        command: "stop",
-        response: promptResponse,
-        // TODO
-        status: "in_progress",
-      });
-    }
-
-    private _invalidPrompt() {
-      this.promptHistory.push({
-        timestamp: new Date(),
-        command: "stop",
-        response: {
-          title: "",
-          md: '<span class="pl-bad">!Invalid prompt</span>',
-        },
-        status: "in_progress",
-      });
-    }
-
-    prompt(text: string) {
-      const walletRegex = /\/wallet\s(0x[a-fA-F0-9]{40})/;
-      const match = text.match(walletRegex);
-      if (match) {
-        const address = match[1];
-        this._wallet(address);
-      } else if (text === "/help") {
-        this._help();
-      } else if (text === "/start") {
-        this._start();
-      } else if (text === "/stop") {
-        this._stop();
-      } else {
-        this._invalidPrompt();
-      }
-      const isCompleted = this.promptCallback(this.promptHistory[this.promptHistory.length - 1]);
-      console.log(isCompleted);
-      if (isCompleted) {
-        console.log("Completed");
-        this.status = "completed";
-      }
-    }
+    this.promptHistory.push({
+      timestamp: new Date(),
+      command: "help",
+      response: promptResponse,
+      status: "in_progress",
+    });
   }
 
-  // View
-  class View {
-    demo: HTMLElement;
-    activeJob: HTMLElement;
-    idleJobs: HTMLElement;
-    completedJobs: HTMLElement;
-    prompt: HTMLElement;
-    promptResponse: HTMLElement;
-
-    constructor() {
-      this.demo = document.getElementById(DEMO_SELECTOR) as HTMLElement;
-      this.idleJobs = this.demo.querySelector(IDLE_JOBS_SELECTOR) as HTMLElement;
-      this.activeJob = this.demo.querySelector(ACTIVE_JOB_SELECTOR) as HTMLElement;
-      this.completedJobs = this.demo.querySelector(COMPLETED_JOBS_SELECTOR) as HTMLElement;
-      this.prompt = this.activeJob.querySelector(PROMPT_INPUT_SELECTOR) as HTMLElement;
-      this.promptResponse = this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement;
-
-      this.activeJob.addEventListener("drag", () => {});
-      this.prompt.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const input = this.prompt.querySelector("input");
-        if (!input) {
-          return;
-        }
-        demo.prompt(input.value);
-      });
+  private _wallet(address: string) {
+    if (!this.demo.user) {
+      throw new Error("Missing global user object");
     }
+    this.demo.user.address = address;
 
-    displayIdleJobs(idleJobs: Job[]) {
-      this.idleJobs.innerHTML = "";
-      for (let i = 0; i < idleJobs.length; i++) {
-        const job = document.createElement("div");
-        job.className = "idle-jobs__job";
-        job.innerHTML = `
+    const promptResponse = {
+      title: "",
+      md: '<span class="pl-mil">+ Successfully registered wallet address</span>',
+    };
+
+    this.promptHistory.push({
+      timestamp: new Date(),
+      command: "stop",
+      response: promptResponse,
+      // TODO
+      status: "in_progress",
+    });
+  }
+
+  private _invalidPrompt() {
+    this.promptHistory.push({
+      timestamp: new Date(),
+      command: "stop",
+      response: {
+        title: "",
+        md: '<span class="pl-bad">!Invalid prompt</span>',
+      },
+      status: "in_progress",
+    });
+  }
+
+  prompt(text: string) {
+    const walletRegex = /\/wallet\s(0x[a-fA-F0-9]{40})/;
+    const match = text.match(walletRegex);
+    if (match) {
+      const address = match[1];
+      this._wallet(address);
+    } else if (text === "/help") {
+      this._help();
+    } else if (text === "/start") {
+      this._start();
+    } else if (text === "/stop") {
+      this._stop();
+    } else {
+      this._invalidPrompt();
+    }
+    const isCompleted = this.promptCallback(this.demo, this.promptHistory[this.promptHistory.length - 1]);
+    if (isCompleted) {
+      this.status = "completed";
+    }
+    return isCompleted;
+  }
+}
+
+// View
+class View {
+  demo: Demo;
+  demoElement: HTMLElement;
+  activeJob: HTMLElement;
+  idleJobs: HTMLElement;
+  completedJobs: HTMLElement;
+  prompt: HTMLElement;
+  promptResponse: HTMLElement;
+
+  constructor(demo: Demo) {
+    this.demo = demo;
+    this.demoElement = document.getElementById(DEMO_SELECTOR) as HTMLElement;
+    this.idleJobs = this.demoElement.querySelector(IDLE_JOBS_SELECTOR) as HTMLElement;
+    this.activeJob = this.demoElement.querySelector(ACTIVE_JOB_SELECTOR) as HTMLElement;
+    this.completedJobs = this.demoElement.querySelector(COMPLETED_JOBS_SELECTOR) as HTMLElement;
+    this.prompt = this.activeJob.querySelector(PROMPT_INPUT_SELECTOR) as HTMLElement;
+    this.promptResponse = this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement;
+
+    this.activeJob.addEventListener("drag", () => {});
+    this.prompt.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = this.prompt.querySelector("input");
+      if (!input) {
+        return;
+      }
+      this.demo.prompt(input.value);
+    });
+
+    this.activeJob.draggable = false;
+    this.activeJob.ondragstart = drag;
+
+    this.completedJobs.ondragover = allowDrop;
+    this.completedJobs.ondrop = (ev: DragEvent) => {
+      drop(ev);
+      this.clearActiveJob();
+    };
+    this.completedJobs.ondragover = dragover;
+  }
+
+  clearActiveJob() {
+    const title = this.activeJob.querySelector(ACTIVE_JOB_TITLE_SELECTOR);
+    const description = this.activeJob.querySelector(ACTIVE_JOB_DESCRIPTION_SELECTOR);
+    const response = this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR);
+    if (!title || !description || !response) {
+      throw new Error("No items");
+    }
+    title.innerHTML = "";
+    description.innerHTML = "";
+    response.innerHTML = "";
+  }
+
+  displayIdleJobs(idleJobs: Job[]) {
+    this.idleJobs.innerHTML = "";
+    for (let i = 0; i < idleJobs.length; i++) {
+      const job = document.createElement("div");
+      job.className = "idle-jobs__job";
+      job.innerHTML = `
             <div>
               <span>${idleJobs[i].name}</span>
             </div>
@@ -263,44 +286,44 @@ export async function mainModule() {
               </div>
             </div>
         `;
-        job.addEventListener("click", () => {
-          demo.selectJob(idleJobs[i]);
-        });
-        this.idleJobs.appendChild(job);
+      job.addEventListener("click", () => {
+        this.demo.selectJob(idleJobs[i]);
+      });
+      this.idleJobs.appendChild(job);
+    }
+  }
+
+  displayActiveJob(job?: Job) {
+    if (!job) {
+      return;
+    }
+    (this.activeJob.querySelector(ACTIVE_JOB_TITLE_SELECTOR) as HTMLElement).innerHTML = job.name;
+    (this.activeJob.querySelector(ACTIVE_JOB_DESCRIPTION_SELECTOR) as HTMLElement).innerHTML = job.description;
+    // TODO Display prompt history
+    (this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement).innerHTML = "";
+  }
+
+  displayPromptHistory(promptHistory: PromptEvent[]) {
+    let responses = "";
+    for (let i = 0; i < promptHistory.length; i++) {
+      const { response } = promptHistory[i];
+      if (response) {
+        responses += response.md;
       }
     }
+    (this.activeJob.querySelector("#active-job__prompt-response") as HTMLElement).innerHTML = responses;
+  }
 
-    displayActiveJob(job?: Job) {
-      if (!job) {
-        return;
-      }
-      (this.activeJob.querySelector(ACTIVE_JOB_TITLE_SELECTOR) as HTMLElement).innerHTML = job.name;
-      (this.activeJob.querySelector(ACTIVE_JOB_DESCRIPTION_SELECTOR) as HTMLElement).innerHTML = job.description;
-      // TODO Display prompt history
-      (this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement).innerHTML = "";
-    }
+  // TODO
+  displayPromptError(errorMessage: string) {
+    console.log(errorMessage);
+  }
 
-    displayPromptHistory(promptHistory: PromptEvent[]) {
-      let responses = "";
-      for (let i = 0; i < promptHistory.length; i++) {
-        const { response } = promptHistory[i];
-        if (response) {
-          responses += response.md;
-        }
-      }
-      (this.activeJob.querySelector("#active-job__prompt-response") as HTMLElement).innerHTML = responses;
-    }
+  displayCompletedJobs(completedJobs: Job[]) {
+    this.completedJobs.innerHTML = "";
 
-    // TODO
-    displayPromptError(errorMessage: string) {
-      console.log(errorMessage);
-    }
-
-    displayCompletedJobs(completedJobs: Job[]) {
-      this.completedJobs.innerHTML = "";
-
-      for (let i = 0; i < completedJobs.length; i++) {
-        const job = `
+    for (let i = 0; i < completedJobs.length; i++) {
+      const job = `
           <div class="completed-job">
             <div>
               <span>${completedJobs[i].name}</span>
@@ -310,74 +333,85 @@ export async function mainModule() {
             </button>
           </div> 
         `;
-        this.completedJobs.innerHTML += job;
-      }
+      this.completedJobs.innerHTML += job;
     }
   }
 
-  class Demo {
-    jobs: Job[] = [];
-    activeJob: Job | undefined;
-    notifications = <Notification[]>[];
-    view: View = new View();
-    user: User = {
-      address: null,
-    };
+  displayCompleted() {
+    // ...
+    this.activeJob.draggable = true;
+  }
+}
 
-    constructor() {}
+export class Demo {
+  jobs: Job[] = [];
+  activeJob: Job | undefined;
+  notifications = <Notification[]>[];
+  view: View = new View(this);
+  user: User = {
+    address: null,
+  };
 
-    addNotification(title: string, description: string) {
-      console.log(title, description);
-      // .. add, setTimeout, remove
+  constructor() {}
+
+  addNotification(title: string, description: string) {
+    console.log(title, description);
+    // .. add, setTimeout, remove
+  }
+
+  selectJob(selectedJob: Job) {
+    const currentlySelectedJob = this.jobs.find((job) => job.status === "selected");
+    if (currentlySelectedJob) {
+      currentlySelectedJob.status = "idle";
     }
-
-    selectJob(selectedJob: Job) {
-      const currentlySelectedJob = this.jobs.find((job) => job.status === "selected");
-      if (currentlySelectedJob) {
-        currentlySelectedJob.status = "idle";
-      }
-      const job = this.jobs.find((job) => job.id === selectedJob.id);
-      if (!job) {
-        throw new Error("No job found");
-      }
-      if (job.status !== "idle") {
-        throw new Error("Cannot select non-idle job");
-      }
-      job.status = "selected";
-      this.activeJob = job;
-      this.view.displayIdleJobs(this.jobs.filter((job) => job.status === "idle"));
-      this.view.displayActiveJob(job);
+    const job = this.jobs.find((job) => job.id === selectedJob.id);
+    if (!job) {
+      throw new Error("No job found");
     }
-
-    prompt(text: string) {
-      if (!this.activeJob) {
-        throw new Error("No active job to prompt");
-      }
-      // TODO
-      // this.validatePrompt(text);
-      try {
-        this.activeJob?.prompt(text);
-        this.view.displayPromptHistory(this.activeJob.promptHistory);
-      } catch (error) {
-        console.log(error);
-        this.view.displayPromptError((error as Error).message);
-      }
+    if (job.status !== "idle") {
+      throw new Error("Cannot select non-idle job");
     }
+    job.status = "selected";
+    this.activeJob = job;
+    this.view.displayIdleJobs(this.jobs.filter((job) => job.status === "idle"));
+    this.view.displayActiveJob(job);
+  }
 
-    createJobs() {
-      this.jobs.push(new Job(DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, demo1Logic));
-      // this.jobs.push(new Job("asd2", "asd"));
-      this.view.displayIdleJobs(this.jobs);
+  prompt(text: string) {
+    if (!this.activeJob) {
+      throw new Error("No active job to prompt");
+    }
+    // TODO
+    // this.validatePrompt(text);
+    try {
+      const isCompleted = this.activeJob?.prompt(text);
+      this.view.displayPromptHistory(this.activeJob.promptHistory);
+      if (isCompleted) {
+        this.view.displayCompleted();
+      }
+    } catch (error) {
+      console.log(error);
+      this.view.displayPromptError((error as Error).message);
     }
   }
 
+  isCurrentJobStatusCompleted() {
+    return this.activeJob?.status === "completed";
+  }
+
+  createJobs() {
+    this.jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, demo1Logic));
+    this.view.displayIdleJobs(this.jobs);
+  }
+}
+
+function demo1Logic(demo: Demo, evt: PromptEvent) {
+  return !!(evt.command === "start" && demo.user.address);
+}
+
+export async function mainModule() {
   const demo = new Demo();
   demo.createJobs();
-
-  function demo1Logic(evt: PromptEvent) {
-    console.log(evt);
-    return !!(evt.command === "start" && demo.user.address);
-  }
 
   return demo;
 }
