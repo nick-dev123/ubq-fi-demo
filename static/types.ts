@@ -16,12 +16,14 @@ type Notification = {
 
 type PromptResponse = {
   title: string;
-  // Contains the markdown response
-  md: string;
+  html: string;
 };
 
 type User = {
   address: string | null;
 };
 
-export { Command, Status, PromptEvent, Notification, PromptResponse, User };
+type JobTime = "<1 Week" | "<1 Day" | "<4 Hours" | "<2 Hours" | "<1 Hour";
+type JobPriority = 1 | 2 | 3 | 4;
+
+export { Command, Status, PromptEvent, Notification, PromptResponse, User, JobTime, JobPriority };

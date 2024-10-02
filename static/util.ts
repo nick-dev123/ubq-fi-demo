@@ -1,4 +1,4 @@
-type HtmlElement = "element_idle" | "element_completed";
+type HtmlElement = "elementIdle" | "elementCompleted" | "elementPromptStart";
 import * as elements from "./elements";
 
 function createElement(name: HtmlElement, dict: object = {}) {
