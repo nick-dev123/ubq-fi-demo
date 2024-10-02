@@ -330,16 +330,10 @@ class View {
     this.completedJobs.innerHTML = "";
 
     for (let i = 0; i < completedJobs.length; i++) {
-      const job = `
-          <div class="completed-job">
-            <div>
-              <span>${completedJobs[i].name}</span>
-            </div>
-            <button>
-              ${completedJobs[i].status === "rewarded" ? "Rewarded" : "Get rewarded"}
-            </button>
-          </div> 
-        `;
+      const job = createElement("elementCompleted", {
+        NAME: completedJobs[i].name,
+        STATUS: completedJobs[i].status === "rewarded" ? "Rewarded" : "Get rewarded",
+      });
       this.completedJobs.innerHTML += job;
     }
   }
