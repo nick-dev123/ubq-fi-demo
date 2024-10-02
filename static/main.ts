@@ -16,6 +16,7 @@ import {
 import { JobPriority, JobTime, PromptEvent, Status, User } from "./types";
 import { allowDrop, drag, dragover, drop } from "./drag";
 import { createElement } from "./util";
+import { elementPromptHelp, elementPromptInvalid, elementPromptWalletRegistration, elementPromptWalletSuccess } from "./elements";
 
 export class Job {
   id = (Math.random() + 1).toString(36);
@@ -66,7 +67,7 @@ export class Job {
     if (!this.demo.user || !this.demo.user.address) {
       const promptResponse = {
         title: "",
-        md: '<span class="pl-mc">!</span> Please set your wallet address with the /wallet command first and try again.',
+        html: '<span class="pl-mc">!</span> Please set your wallet address with the /wallet command first and try again.',
       };
       this.promptHistory[length - 1].response = promptResponse;
       this.promptHistory[length - 1].status = "rejected";
@@ -77,23 +78,10 @@ export class Job {
 
     const promptResponse = {
       title: "",
-      md: `
-            <samp>
-              <table>
-                  <tr><td>Deadline</td><td>${+this.deadline}</td></tr>
-                  <tr>
-                  <td>Beneficiary</td>
-                  <td>${this.demo.user.address}</td>
-                  </tr>
-              </table>
-            </samp>
-            <h6>Tips:</h6>
-            <ul>
-              <li>Use <code>/wallet 0x0000...0000</code> if you want to update your registered payment wallet address.</li>
-              <li>Be sure to open a draft pull request as soon as possible to communicate updates on your progress.</li>
-              <li>Be sure to provide timely updates to us when requested, or you will be automatically unassigned from the task.</li>
-            <ul>
-        `,
+      html: createElement("elementPromptStart", {
+        DEADLINE: +this.deadline,
+        USER_ADDRESS: this.demo.user.address,
+      }),
     };
     this.promptHistory[length - 1].response = promptResponse;
   }
@@ -108,7 +96,7 @@ export class Job {
     // TODO
     const promptResponse = {
       title: "STOP",
-      md: '<span class="pl-mil">+ Successfully registered wallet address</span>',
+      html: elementPromptWalletSuccess,
     };
 
     this.promptHistory.push({
@@ -122,50 +110,7 @@ export class Job {
   private _help() {
     const promptResponse = {
       title: "Available commands",
-      md: `
-            <table>
-              <thead>
-                <tr>
-                  <th>Command</th>
-                  <th>Description</th>
-                  <th>Example</th>
-                </tr>
-              </thead>  
-            <tbody>
-              <tr>
-                <td class="code">/help</td>
-                <td>List all available commands.</td>
-                <td class="code">/help</td>
-              </tr>
-              <tr>
-                <td>/allow</td>
-                <td>Allows the user to modify the given label.</td>
-                <td>/allow @user1 label</td>
-              </tr>
-              <tr>
-                <td>/query</td>
-                <td>Returns the user&#39;s wallet, access, and multiplier information.</td>
-                <td>/query @ubiquibot</td>
-              </tr>
-              <tr>
-                <td>/start</td>
-                <td>Assign yourself to the issue.</td>
-                <td>/start</td>
-              </tr>
-              <tr>
-                <td>/stop</td>
-                <td>Unassign yourself from the issue.</td>
-                <td>/stop</td>
-              </tr>
-              <tr>
-                <td>/wallet</td>
-                <td>Register your wallet address for payments.</td>
-                <td>/wallet ubq.eth</td>
-              </tr>
-            </tbody>
-          </table>
-
-          `,
+      html: elementPromptHelp,
     };
 
     this.promptHistory.push({
@@ -184,7 +129,7 @@ export class Job {
 
     const promptResponse = {
       title: "",
-      md: '<span class="pl-mil">+ Successfully registered wallet address</span>',
+      html: elementPromptWalletRegistration,
     };
 
     this.promptHistory.push({
@@ -202,7 +147,7 @@ export class Job {
       command: "stop",
       response: {
         title: "",
-        md: '<span class="pl-bad">!Invalid prompt</span>',
+        html: elementPromptInvalid,
       },
       status: "in_progress",
     });
@@ -315,7 +260,7 @@ class View {
     for (let i = 0; i < promptHistory.length; i++) {
       const { response } = promptHistory[i];
       if (response) {
-        responses += response.md;
+        responses += response.html;
       }
     }
     (this.activeJob.querySelector("#active-job__prompt-response") as HTMLElement).innerHTML = responses;
