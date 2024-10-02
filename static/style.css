@@ -38,6 +38,11 @@ main {
     width: 400px;
     min-width: 400px;
 
+    #idle-jobs__title {
+      font-size: 20px;
+      margin: 12px;
+    }
+
     .idle-jobs__job {
       cursor: pointer;
       display: flex;
@@ -45,32 +50,77 @@ main {
       width: 90%;
       gap: 6px;
       margin: 12px auto;
-      background-color: black;
-      padding: 4px 8px;
+      background-color: #000210;
+      padding: 12px 0px;
+      font-weight: 500;
+      transition: 125ms opacity ease-out 62.5ms;
+      opacity: 0.66;
 
-      .idle-jobs__job__details {
+      .idle-jobs__job__info {
+        font-size: 14px;
+        line-height: 1;
+      }
+
+      .idle-jobs__job__labels {
         display: flex;
         flex-direction: row;
         justify-content: space-evenly;
         gap: 2px;
 
-        div {
-          background-color: grey;
+        label {
           width: 30%;
-          padding: 4px;
-          margin-bottom: 4px;
+          padding: 4px 6px;
+          line-height: 1.25;
+          margin: 0 4px 0;
+          margin-bottom:0 4px;
           text-align: center;
+          background-color: #80808020;
+          letter-spacing: 0.5px;
+          text-overflow: ellipsis;
+          height: 16px;
+          overflow: hidden;
+          display: inline-block;
+          cursor: pointer;
+          font-size: 12px;
         }
       }
     }
-    .idle-jobs__job:hover {
-      border: 1px solid red;
-    }
+    
   }
+
+  #idle-jobs__container:hover {
+    .idle-jobs__job:hover{
+      opacity: 1;
+    }
+
+    .idle-jobs__job:not(:hover){
+      opacity: 0.5;
+    }
+  } 
+
 
   #completed-jobs {
     width: 250px;
     min-width: 250px;
+
+    #completed-jobs__title {
+      font-size: 20px;
+      margin: 12px;
+    }
+
+    .completed-jobs__job {
+      min-height: 150px;
+      margin: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .dropzone-active {
+      border: 1px solid blue;
+    }
+  }
+
+  .dragover {
+    background-color: blue;
   }
 
   #active-job {
@@ -81,11 +131,24 @@ main {
     #active-job__title, #active-job__description {
       max-height: 30px;
     }
+
+    #active-job__title {
+      font-size: 24px;
+      max-height: 100px;
+    }
+
+    #active-job__description {
+      font-size: 20px;
+      min-height: 250px;
+    }
+
     #active-job__prompt-response {
       flex-grow: 1;
+      overflow: scroll;
     }
     #active-job__prompt-input  {
-      height: 200px;
+      height: 100px;
+      min-height: 100px;
     }
   }
 }
