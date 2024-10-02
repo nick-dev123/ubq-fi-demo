@@ -4,32 +4,50 @@ import {
   ACTIVE_JOB_TITLE_SELECTOR,
   COMPLETED_JOBS_SELECTOR,
   DEMO_JOB1_DESCRIPTION,
+  DEMO_JOB1_PRICING,
+  DEMO_JOB1_PRIORITY,
+  DEMO_JOB1_TIME,
   DEMO_JOB1_TITLE,
   DEMO_SELECTOR,
   IDLE_JOBS_SELECTOR,
   PROMPT_INPUT_SELECTOR,
   PROMPT_RESPONSE_SELECTOR,
 } from "./constants";
-import { PromptEvent, Status, User } from "./types";
+import { JobPriority, JobTime, PromptEvent, Status, User } from "./types";
 import { allowDrop, drag, dragover, drop } from "./drag";
+import { createElement } from "./util";
 
-class Job {
+export class Job {
   id = (Math.random() + 1).toString(36);
   name: string;
   description: string;
   status: Status;
   promptHistory: PromptEvent[];
   deadline: Date | undefined;
+  pricing: number;
+  time: JobTime;
+  priority: JobPriority;
   demo: Demo;
   // Gets called after every prompt, if true the job is completed
   promptCallback: (demo: Demo, evt: PromptEvent) => boolean;
 
-  constructor(demo: Demo, name: string, description: string, promptCallback: (demo: Demo, evt: PromptEvent) => boolean) {
+  constructor(
+    demo: Demo,
+    name: string,
+    description: string,
+    pricing: number,
+    time: JobTime,
+    priority: JobPriority,
+    promptCallback: (demo: Demo, evt: PromptEvent) => boolean
+  ) {
     this.name = name;
     this.demo = demo;
     this.description = description;
     this.status = "idle";
     this.promptHistory = [];
+    this.pricing = pricing;
+    this.time = time;
+    this.priority = priority;
     this.promptCallback = promptCallback;
   }
 
@@ -232,7 +250,6 @@ class View {
     this.prompt = this.activeJob.querySelector(PROMPT_INPUT_SELECTOR) as HTMLElement;
     this.promptResponse = this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement;
 
-    this.activeJob.addEventListener("drag", () => {});
     this.prompt.addEventListener("submit", (event) => {
       event.preventDefault();
       const input = this.prompt.querySelector("input");
@@ -247,7 +264,7 @@ class View {
 
     this.completedJobs.ondragover = allowDrop;
     this.completedJobs.ondrop = (ev: DragEvent) => {
-      drop(ev);
+      drop(ev, this.demo.activeJob as Job);
       this.clearActiveJob();
     };
     this.completedJobs.ondragover = dragover;
@@ -266,26 +283,17 @@ class View {
   }
 
   displayIdleJobs(idleJobs: Job[]) {
-    this.idleJobs.innerHTML = "";
+    this.idleJobs.innerHTML = '<div id="idle-jobs__title">Jobs to Complete</div>';
     for (let i = 0; i < idleJobs.length; i++) {
       const job = document.createElement("div");
+      const idleJobInnerHtml = createElement("elementIdle", {
+        NAME: idleJobs[i].name,
+        PRICING: idleJobs[i].pricing,
+        TIME: idleJobs[i].time,
+        PRIORITY: idleJobs[i].priority,
+      });
       job.className = "idle-jobs__job";
-      job.innerHTML = `
-            <div>
-              <span>${idleJobs[i].name}</span>
-            </div>
-            <div class="idle-jobs__job__details">
-              <div>
-                2400 USD
-              </div>
-              <div>
-                <2 Weeks
-              </div>
-              <div>
-                3 (High)
-              </div>
-            </div>
-        `;
+      job.innerHTML = idleJobInnerHtml;
       job.addEventListener("click", () => {
         this.demo.selectJob(idleJobs[i]);
       });
@@ -299,7 +307,6 @@ class View {
     }
     (this.activeJob.querySelector(ACTIVE_JOB_TITLE_SELECTOR) as HTMLElement).innerHTML = job.name;
     (this.activeJob.querySelector(ACTIVE_JOB_DESCRIPTION_SELECTOR) as HTMLElement).innerHTML = job.description;
-    // TODO Display prompt history
     (this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement).innerHTML = "";
   }
 
@@ -400,7 +407,8 @@ export class Demo {
   }
 
   createJobs() {
-    this.jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, demo1Logic));
+    this.jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_TIME, DEMO_JOB1_PRIORITY, demo1Logic));
+    this.jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_TIME, DEMO_JOB1_PRIORITY, demo1Logic));
     this.view.displayIdleJobs(this.jobs);
   }
 }
