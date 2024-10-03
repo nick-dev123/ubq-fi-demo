@@ -1,9 +1,8 @@
 import { DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_PRIORITY, DEMO_JOB1_TIME, DEMO_JOB1_TITLE } from "./constants";
-import { JobPriority, JobTime, PromptEvent, Status, User } from "./types";
-import { createElement } from "./util";
-import { elementPromptHelp, elementPromptInvalid, elementPromptWalletRegistration, elementPromptWalletSuccess } from "./elements";
+import { HtmlElement, HtmlElementModifiable, JobPriority, JobTime, PromptEvent, Status, User } from "./types";
 import { View } from "./view";
 
+/** Job: A demo has multiple sample jobs, which can be interacted with */
 class Job {
   id = (Math.random() + 1).toString(36);
   name: string;
@@ -15,7 +14,7 @@ class Job {
   time: JobTime;
   priority: JobPriority;
   demo: Demo;
-  // Gets called after every prompt, if true the job is completed
+  // Gets called after every prompt, true
   promptCallback: (demo: Demo, evt: PromptEvent) => boolean;
 
   constructor(
@@ -53,7 +52,9 @@ class Job {
     if (!this.demo.user || !this.demo.user.address) {
       const promptResponse = {
         title: "",
-        html: '<span class="pl-mc">!</span> Please set your wallet address with the /wallet command first and try again.',
+        html: {
+          name: "elementPromptWalletWarning" as HtmlElement,
+        },
       };
       this.promptHistory[length - 1].response = promptResponse;
       this.promptHistory[length - 1].status = "rejected";
@@ -65,10 +66,13 @@ class Job {
 
     const promptResponse = {
       title: "",
-      html: createElement("elementPromptStart", {
-        DEADLINE: +this.deadline,
-        USER_ADDRESS: this.demo.user.address,
-      }),
+      html: {
+        name: "elementPromptStart" as HtmlElementModifiable,
+        modifiers: {
+          DEADLINE: this.deadline.toString(),
+          USER_ADDRESS: this.demo.user.address,
+        },
+      },
     };
     this.promptHistory[length - 1].response = promptResponse;
   }
@@ -83,7 +87,9 @@ class Job {
     // TODO
     const promptResponse = {
       title: "STOP",
-      html: elementPromptWalletSuccess,
+      html: {
+        name: "elementPromptWalletSuccess" as HtmlElement,
+      },
     };
 
     this.promptHistory.push({
@@ -97,7 +103,9 @@ class Job {
   private _help() {
     const promptResponse = {
       title: "Available commands",
-      html: elementPromptHelp,
+      html: {
+        name: "elementPromptHelp" as HtmlElement,
+      },
     };
 
     this.promptHistory.push({
@@ -116,7 +124,9 @@ class Job {
 
     const promptResponse = {
       title: "",
-      html: elementPromptWalletRegistration,
+      html: {
+        name: "elementPromptWalletRegistration" as HtmlElement,
+      },
     };
 
     this.promptHistory.push({
@@ -134,7 +144,9 @@ class Job {
       command: "stop",
       response: {
         title: "",
-        html: elementPromptInvalid,
+        html: {
+          name: "elementPromptInvalid",
+        },
       },
       status: "in_progress",
     });

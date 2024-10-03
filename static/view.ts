@@ -15,7 +15,8 @@ import {
   PROMPT_RESPONSE_SELECTOR,
 } from "./constants";
 import { createElement } from "./util";
-import { PromptEvent } from "./types";
+import { HtmlElementModifiable, PromptEvent } from "./types";
+import * as elements from "./elements";
 
 // View
 class View {
@@ -101,7 +102,11 @@ class View {
     for (let i = 0; i < promptHistory.length; i++) {
       const { response } = promptHistory[i];
       if (response) {
-        responses += response.html;
+        if (response.html.modifiers) {
+          responses += createElement(response.html.name as HtmlElementModifiable, response.html.modifiers);
+        } else {
+          responses += elements[response.html.name];
+        }
       }
     }
     (this.activeJob.querySelector("#active-job__prompt-response") as HTMLElement).innerHTML = responses;
