@@ -1,24 +1,10 @@
-import {
-  ACTIVE_JOB_DESCRIPTION_SELECTOR,
-  ACTIVE_JOB_SELECTOR,
-  ACTIVE_JOB_TITLE_SELECTOR,
-  COMPLETED_JOBS_SELECTOR,
-  DEMO_JOB1_DESCRIPTION,
-  DEMO_JOB1_PRICING,
-  DEMO_JOB1_PRIORITY,
-  DEMO_JOB1_TIME,
-  DEMO_JOB1_TITLE,
-  DEMO_SELECTOR,
-  IDLE_JOBS_SELECTOR,
-  PROMPT_INPUT_SELECTOR,
-  PROMPT_RESPONSE_SELECTOR,
-} from "./constants";
+import { DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_PRIORITY, DEMO_JOB1_TIME, DEMO_JOB1_TITLE } from "./constants";
 import { JobPriority, JobTime, PromptEvent, Status, User } from "./types";
-import { allowDrop, drag, dragover, drop } from "./drag";
 import { createElement } from "./util";
 import { elementPromptHelp, elementPromptInvalid, elementPromptWalletRegistration, elementPromptWalletSuccess } from "./elements";
+import { View } from "./view";
 
-export class Job {
+class Job {
   id = (Math.random() + 1).toString(36);
   name: string;
   description: string;
@@ -74,6 +60,7 @@ export class Job {
       throw new Error("You must set your wallet address");
     }
     this.status = "in_progress";
+    // TODO
     this.deadline = new Date("Tue, Sep 24, 11:20 PM UTC");
 
     const promptResponse = {
@@ -176,120 +163,7 @@ export class Job {
   }
 }
 
-// View
-class View {
-  demo: Demo;
-  demoElement: HTMLElement;
-  activeJob: HTMLElement;
-  idleJobs: HTMLElement;
-  completedJobs: HTMLElement;
-  prompt: HTMLElement;
-  promptResponse: HTMLElement;
-
-  constructor(demo: Demo) {
-    this.demo = demo;
-    this.demoElement = document.getElementById(DEMO_SELECTOR) as HTMLElement;
-    this.idleJobs = this.demoElement.querySelector(IDLE_JOBS_SELECTOR) as HTMLElement;
-    this.activeJob = this.demoElement.querySelector(ACTIVE_JOB_SELECTOR) as HTMLElement;
-    this.completedJobs = this.demoElement.querySelector(COMPLETED_JOBS_SELECTOR) as HTMLElement;
-    this.prompt = this.activeJob.querySelector(PROMPT_INPUT_SELECTOR) as HTMLElement;
-    this.promptResponse = this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement;
-
-    this.prompt.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const input = this.prompt.querySelector("input");
-      if (!input) {
-        return;
-      }
-      this.demo.prompt(input.value);
-    });
-
-    this.activeJob.draggable = false;
-    this.activeJob.ondragstart = drag;
-
-    this.completedJobs.ondragover = allowDrop;
-    this.completedJobs.ondrop = (ev: DragEvent) => {
-      drop(ev, this.demo.activeJob as Job);
-      this.clearActiveJob();
-    };
-    this.completedJobs.ondragover = dragover;
-  }
-
-  clearActiveJob() {
-    const title = this.activeJob.querySelector(ACTIVE_JOB_TITLE_SELECTOR);
-    const description = this.activeJob.querySelector(ACTIVE_JOB_DESCRIPTION_SELECTOR);
-    const response = this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR);
-    if (!title || !description || !response) {
-      throw new Error("No items");
-    }
-    title.innerHTML = "";
-    description.innerHTML = "";
-    response.innerHTML = "";
-  }
-
-  displayIdleJobs(idleJobs: Job[]) {
-    this.idleJobs.innerHTML = '<div id="idle-jobs__title">Jobs to Complete</div>';
-    for (let i = 0; i < idleJobs.length; i++) {
-      const job = document.createElement("div");
-      const idleJobInnerHtml = createElement("elementIdle", {
-        NAME: idleJobs[i].name,
-        PRICING: idleJobs[i].pricing,
-        TIME: idleJobs[i].time,
-        PRIORITY: idleJobs[i].priority,
-      });
-      job.className = "idle-jobs__job";
-      job.innerHTML = idleJobInnerHtml;
-      job.addEventListener("click", () => {
-        this.demo.selectJob(idleJobs[i]);
-      });
-      this.idleJobs.appendChild(job);
-    }
-  }
-
-  displayActiveJob(job?: Job) {
-    if (!job) {
-      return;
-    }
-    (this.activeJob.querySelector(ACTIVE_JOB_TITLE_SELECTOR) as HTMLElement).innerHTML = job.name;
-    (this.activeJob.querySelector(ACTIVE_JOB_DESCRIPTION_SELECTOR) as HTMLElement).innerHTML = job.description;
-    (this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement).innerHTML = "";
-  }
-
-  displayPromptHistory(promptHistory: PromptEvent[]) {
-    let responses = "";
-    for (let i = 0; i < promptHistory.length; i++) {
-      const { response } = promptHistory[i];
-      if (response) {
-        responses += response.html;
-      }
-    }
-    (this.activeJob.querySelector("#active-job__prompt-response") as HTMLElement).innerHTML = responses;
-  }
-
-  // TODO
-  displayPromptError(errorMessage: string) {
-    console.log(errorMessage);
-  }
-
-  displayCompletedJobs(completedJobs: Job[]) {
-    this.completedJobs.innerHTML = "";
-
-    for (let i = 0; i < completedJobs.length; i++) {
-      const job = createElement("elementCompleted", {
-        NAME: completedJobs[i].name,
-        STATUS: completedJobs[i].status === "rewarded" ? "Rewarded" : "Get rewarded",
-      });
-      this.completedJobs.innerHTML += job;
-    }
-  }
-
-  displayCompleted() {
-    // ...
-    this.activeJob.draggable = true;
-  }
-}
-
-export class Demo {
+class Demo {
   jobs: Job[] = [];
   activeJob: Job | undefined;
   notifications = <Notification[]>[];
@@ -370,3 +244,5 @@ mainModule()
   .catch((error) => {
     console.error(error);
   });
+
+export { Demo, Job };
