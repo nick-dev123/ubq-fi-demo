@@ -1,5 +1,5 @@
 import { DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_PRIORITY, DEMO_JOB1_TIME, DEMO_JOB1_TITLE } from "./constants";
-import { HtmlElement, HtmlElementModifiable, JobPriority, JobTime, PromptEvent, Status, User } from "./types";
+import { CallbackFn, HtmlElement, HtmlElementModifiable, JobPriority, JobTime, PromptEvent, Status, User } from "./types";
 import { View } from "./view";
 
 /** Job: A demo has multiple sample jobs, which can be interacted with */
@@ -14,18 +14,20 @@ class Job {
   time: JobTime;
   priority: JobPriority;
   demo: Demo;
-  // Gets called after every prompt, true
   promptCallback: (demo: Demo, evt: PromptEvent) => boolean;
 
-  constructor(
-    demo: Demo,
-    name: string,
-    description: string,
-    pricing: number,
-    time: JobTime,
-    priority: JobPriority,
-    promptCallback: (demo: Demo, evt: PromptEvent) => boolean
-  ) {
+  /**
+   * constructor description
+   * @param  {Demo} demo reference to the demo class that owns this job
+   * @param  {string} name Job name
+   * @param  {string} description Job description
+   * @param  {number} pricing Job pricing that is paid out the bounty hunter
+   * @param  {JobTime} time Expected job completion time
+   * @param  {JobPriority} priority Value between 1 and 4, higher number -> higher priority
+   * @param  {CallbackFn} promptCallback Gets called after every prompt, true return value represents a completed job
+   *            The callback functions receives the demo object and the last prompt event
+   */
+  constructor(demo: Demo, name: string, description: string, pricing: number, time: JobTime, priority: JobPriority, promptCallback: CallbackFn) {
     this.name = name;
     this.demo = demo;
     this.description = description;
@@ -37,11 +39,27 @@ class Job {
     this.promptCallback = promptCallback;
   }
 
+  /**
+     * A private method to start a job
+     * Start conditions:
+     *  1. The job has to be selected first
+     *  2. User's wallet address must be set
+     * Side effects:
+     *  1. A new prompt is inserted into the history
+     *  2. The status of job is set to in_progress
+    // TODO
+     *  3. A new deadline is calculated based on the time property
+     * @error Throws error if the starting condiditons are not met
+     */
   private _start() {
     if (this.status !== "selected") {
-      this.demo.addNotification("Error", "Cannot start non-idle job");
+      // TODO
+      // this.demo.addNotification("Error", "Cannot start non-idle job");
       throw new Error("Cannot start job");
     }
+
+    const user = this.demo.getUser();
+
     const length = this.promptHistory.push({
       timestamp: new Date(),
       command: "start",
@@ -49,7 +67,7 @@ class Job {
       status: "in_progress",
     });
 
-    if (!this.demo.user || !this.demo.user.address) {
+    if (!user || !user.address) {
       const promptResponse = {
         title: "",
         html: {
@@ -60,26 +78,35 @@ class Job {
       this.promptHistory[length - 1].status = "rejected";
       throw new Error("You must set your wallet address");
     }
+
     this.status = "in_progress";
-    // TODO
     this.deadline = new Date("Tue, Sep 24, 11:20 PM UTC");
 
-    const promptResponse = {
+    this.promptHistory[length - 1].response = {
       title: "",
       html: {
         name: "elementPromptStart" as HtmlElementModifiable,
         modifiers: {
           DEADLINE: this.deadline.toString(),
-          USER_ADDRESS: this.demo.user.address,
+          USER_ADDRESS: user.address,
         },
       },
     };
-    this.promptHistory[length - 1].response = promptResponse;
   }
 
+  /**
+   * A private method to stop a job
+   * Stop conditions:
+   *  1. The job has to be in progress
+   * Side effects:
+   *  1. A new prompt is inserted into the history
+   *  2. The status of job is set to stopped
+   * @error Throws error if the stop condiditons are not met
+   */
   private _stop() {
     if (this.status !== "in_progress") {
-      this.demo.addNotification("Error", "Cannot stop non-in-progress job");
+      // TODO
+      // this.demo.addNotification("Error", "Cannot stop non-in-progress job");
       throw new Error("Cannot stop job");
     }
     this.status = "stopped";
@@ -100,6 +127,11 @@ class Job {
     });
   }
 
+  /**
+   * A private method to generate help information
+   * Side effects:
+   *  1. A new prompt is inserted into the history
+   */
   private _help() {
     const promptResponse = {
       title: "Available commands",
@@ -116,11 +148,18 @@ class Job {
     });
   }
 
+  /**
+   * A private method to set a user's wallet
+   * Side effects:
+   *  1. User wallet address is updated in the demo object
+   *  2. A new prompt is inserted into the history
+   * @error Throws error if the starting condiditons are not met
+   */
   private _wallet(address: string) {
-    if (!this.demo.user) {
+    if (!this.demo.getUser()) {
       throw new Error("Missing global user object");
     }
-    this.demo.user.address = address;
+    this.demo.setUserAddress(address);
 
     const promptResponse = {
       title: "",
@@ -133,11 +172,17 @@ class Job {
       timestamp: new Date(),
       command: "stop",
       response: promptResponse,
-      // TODO
+      // TODO Get the current status
       status: "in_progress",
     });
   }
 
+  /**
+   * A private method in case of an invalid prompt
+   * Side effects:
+   *  1. A new prompt is inserted into the history
+   * @error Throws error if the starting condiditons are not met
+   */
   private _invalidPrompt() {
     this.promptHistory.push({
       timestamp: new Date(),
@@ -152,6 +197,13 @@ class Job {
     });
   }
 
+  /**
+   * A method to prompt a job
+   * The query text has to match one of the predefined templates otherwise an invalid prompt message is displayed
+   * Side effects:
+   *  1. The job's status might get updated to completed if the callback's return value is true
+   * @return The callback function's return value
+   */
   prompt(text: string) {
     const walletRegex = /\/wallet\s(0x[a-fA-F0-9]{40})/;
     const match = text.match(walletRegex);
@@ -175,71 +227,111 @@ class Job {
   }
 }
 
+/** Demo: Main demo module */
 class Demo {
-  jobs: Job[] = [];
-  activeJob: Job | undefined;
-  notifications = <Notification[]>[];
-  view: View = new View(this);
-  user: User = {
+  private _jobs: Job[] = [];
+  private _activeJob: Job | undefined;
+  private _view: View = new View(this);
+  private _user: User = {
     address: null,
   };
 
   constructor() {}
 
-  addNotification(title: string, description: string) {
-    console.log(title, description);
-    // .. add, setTimeout, remove
-  }
-
+  /**
+   * A method to select a job
+   * Conditions:
+   *  1. The job has to be idle
+   * Side effects:
+   *  1. Sets the selected job as the active job
+   *  2. Updates job's status to selected
+   *  3. Displays active job
+   *  4. Displays idle jobs list
+   * @error Throws error if the job selection condiditon is not met
+   */
   selectJob(selectedJob: Job) {
-    const currentlySelectedJob = this.jobs.find((job) => job.status === "selected");
-    if (currentlySelectedJob) {
-      currentlySelectedJob.status = "idle";
-    }
-    const job = this.jobs.find((job) => job.id === selectedJob.id);
+    const job = this._jobs.find((job) => job.id === selectedJob.id);
     if (!job) {
       throw new Error("No job found");
     }
     if (job.status !== "idle") {
       throw new Error("Cannot select non-idle job");
     }
+
+    const currentlySelectedJob = this._jobs.find((job) => job.status === "selected");
+    if (currentlySelectedJob) {
+      currentlySelectedJob.status = "idle";
+    }
+
     job.status = "selected";
-    this.activeJob = job;
-    this.view.displayIdleJobs(this.jobs.filter((job) => job.status === "idle"));
-    this.view.displayActiveJob(job);
+    this._activeJob = job;
+    this._view.displayIdleJobs(this._jobs.filter((job) => job.status === "idle"));
+    this._view.displayActiveJob(job);
   }
 
+  /**
+   * A method to receive prompts
+   * Prompt conditions:
+   *  1. There has to be an active job
+   * Side effects:
+   *  1. The prompt response is displayed
+   *  2. (Optionally) A completed job is displayed
+   *  3. (Optionally) An error response is displayed
+   * @error Throws if there is no active job
+   */
   prompt(text: string) {
-    if (!this.activeJob) {
+    if (!this._activeJob) {
       throw new Error("No active job to prompt");
     }
-    // TODO
-    // this.validatePrompt(text);
     try {
-      const isCompleted = this.activeJob?.prompt(text);
-      this.view.displayPromptHistory(this.activeJob.promptHistory);
+      const isCompleted = this._activeJob?.prompt(text);
+      this._view.displayPromptHistory(this._activeJob.promptHistory);
       if (isCompleted) {
-        this.view.displayCompleted();
+        this._view.displayCompleted();
       }
     } catch (error) {
       console.log(error);
-      this.view.displayPromptError((error as Error).message);
+      this._view.displayPromptError((error as Error).message);
     }
   }
 
   isCurrentJobStatusCompleted() {
-    return this.activeJob?.status === "completed";
+    return this._activeJob?.status === "completed";
   }
 
+  /**
+   * A method to create sample jobs
+   * Side effects:
+   *  1. Display jobs
+   */
   createJobs() {
-    this.jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_TIME, DEMO_JOB1_PRIORITY, demo1Logic));
-    this.jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_TIME, DEMO_JOB1_PRIORITY, demo1Logic));
-    this.view.displayIdleJobs(this.jobs);
+    this._jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_TIME, DEMO_JOB1_PRIORITY, demo1Logic));
+    this._jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_TIME, DEMO_JOB1_PRIORITY, demo1Logic));
+    this._view.displayIdleJobs(this._jobs);
+  }
+
+  getUser() {
+    return this._user;
+  }
+
+  setUserAddress(address: string) {
+    if (this._user.address) {
+      console.log("Updating address");
+    }
+    this._user.address = address;
+  }
+
+  /**
+   * A private method to create a notification
+   */
+  private _addNotification(title: string, description: string) {
+    console.log(title, description);
+    // .. add, setTimeout, remove
   }
 }
 
 function demo1Logic(demo: Demo, evt: PromptEvent) {
-  return !!(evt.command === "start" && demo.user.address);
+  return !!(evt.command === "start" && demo.getUser().address);
 }
 
 export async function mainModule() {
