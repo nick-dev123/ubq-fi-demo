@@ -209,6 +209,25 @@ class Job {
   }
 
   /**
+   * A private method in case of an invalid prompt
+   * Side effects:
+   *  1. A new prompt is inserted into the history
+   * @error Throws error if the starting condiditons are not met
+   */
+  private _completePrompt() {
+    this.promptHistory.push({
+      timestamp: new Date(+new Date() + 1),
+      response: {
+        title: "",
+        html: {
+          name: "elementPromptCompleted",
+        },
+      },
+      status: "completed",
+    });
+  }
+
+  /**
    * A method to prompt a job
    * The query text has to match one of the predefined templates otherwise an invalid prompt message is displayed
    * Side effects:
@@ -233,6 +252,8 @@ class Job {
     const isCompleted = this.promptCallback(this.demo, this.promptHistory[this.promptHistory.length - 1]);
     if (isCompleted) {
       this.status = "completed";
+      this._completePrompt();
+      console.log(this.promptHistory);
     }
     return isCompleted;
   }
@@ -253,6 +274,7 @@ class Demo {
    * A method to select a job
    * Conditions:
    *  1. The job has to be idle
+   *  2. The curent job cannot be completed
    * Side effects:
    *  1. Sets the selected job as the active job
    *  2. Updates job's status to selected
@@ -261,6 +283,9 @@ class Demo {
    * @error Throws error if the job selection condiditon is not met
    */
   selectJob(selectedJob: Job) {
+    if (this._activeJob?.status === "completed") {
+      throw new Error("Cannot select other job, when current job is completed");
+    }
     const job = this._jobs.find((job) => job.id === selectedJob.id);
     if (!job) {
       throw new Error("No job found");

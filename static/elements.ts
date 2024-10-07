@@ -26,6 +26,7 @@ const elementCompleted = `
 `;
 
 const elementPromptHelp = `
+    <div>
     <table>
         <thead>
             <tr>
@@ -67,15 +68,17 @@ const elementPromptHelp = `
             </tr>
         </tbody>
     </table>
+    </div>
 `;
 
-const elementPromptWalletRegistration = '<span class="pl-mil">+ Successfully registered wallet address</span>';
+const elementPromptWalletRegistration = '<div><span class="pl-mil">+ Successfully registered wallet address</span></div>';
 
-const elementPromptInvalid = '<span class="pl-bad">!Invalid prompt</span>';
+const elementPromptInvalid = '<div><span class="pl-bad">!Invalid prompt</span></div>';
 
-const elementPromptWalletSuccess = '<span class="pl-mil">+ Successfully registered wallet address</span>';
+const elementPromptWalletSuccess = '<div><span class="pl-mil">+ Successfully registered wallet address</span></div>';
 
 const elementPromptStart = `
+            <div>
             <samp>
               <table>
                   <tr><td>Deadline</td><td>DEADLINE</td></tr>
@@ -91,9 +94,11 @@ const elementPromptStart = `
               <li>Be sure to open a draft pull request as soon as possible to communicate updates on your progress.</li>
               <li>Be sure to provide timely updates to us when requested, or you will be automatically unassigned from the task.</li>
             <ul>
-        `;
+        </div>`;
 
-const elementPromptWalletWarning = '<span class="pl-mc">!</span> Please set your wallet address with the /wallet command first and try again.';
+const elementPromptWalletWarning = '<div><span class="pl-mc">!</span> Please set your wallet address with the /wallet command first and try again.</div>';
+
+const elementPromptCompleted = "<div><span>Job successfully completed!</span></div>";
 
 export {
   elementIdle,
@@ -104,4 +109,5 @@ export {
   elementPromptWalletRegistration,
   elementPromptWalletSuccess,
   elementPromptWalletWarning,
+  elementPromptCompleted,
 };
