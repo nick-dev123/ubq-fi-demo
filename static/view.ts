@@ -13,6 +13,7 @@ import {
   IDLE_JOBS_SELECTOR,
   PROMPT_INPUT_SELECTOR,
   PROMPT_RESPONSE_SELECTOR,
+  PROMPT_INPUT_PROMPTS_SELECTOR,
 } from "./constants";
 import { createElement } from "./util";
 import { HtmlElementModifiable, PromptEvent } from "./types";
@@ -55,19 +56,58 @@ class View {
       this.clearActiveJob();
     };
     this.completedJobs.ondragover = dragover;
+    this.disableActiveJobInputs();
   }
 
   clearActiveJob() {
     const title = this.activeJob.querySelector(ACTIVE_JOB_TITLE_SELECTOR);
+    const input = this.activeJob.querySelector("input");
     const description = this.activeJob.querySelector(ACTIVE_JOB_DESCRIPTION_SELECTOR);
     const response = this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR);
-    if (!title || !description || !response) {
+    if (!title || !description || !response || !input) {
       throw new Error("No items");
     }
     title.innerHTML = "";
     description.innerHTML = "";
     response.innerHTML = "";
+    input.value = "";
     this.activeJob.draggable = false;
+
+    this.disableActiveJobInputs();
+  }
+
+  disableActiveJobInputs() {
+    const input = this.activeJob.querySelector("input");
+    const submitBtn = this.activeJob.querySelector("button");
+    const samplePrompts = this.activeJob.querySelectorAll(`${PROMPT_INPUT_PROMPTS_SELECTOR} > li > button`);
+    if (!input || !submitBtn) {
+      throw new Error("No items");
+    }
+
+    this.prompt.classList.add("active-job__prompt-input--disabled");
+
+    input.disabled = true;
+    submitBtn.disabled = true;
+    samplePrompts.forEach((p) => {
+      (p as HTMLInputElement).disabled = true;
+    });
+  }
+
+  enableActiveJobInputs() {
+    const input = this.activeJob.querySelector("input");
+    const submitBtn = this.activeJob.querySelector("button");
+    const samplePrompts = this.activeJob.querySelectorAll(`${PROMPT_INPUT_PROMPTS_SELECTOR} > li > button`);
+    if (!input || !submitBtn) {
+      throw new Error("No items");
+    }
+
+    this.prompt.classList.remove("active-job__prompt-input--disabled");
+
+    input.disabled = false;
+    submitBtn.disabled = false;
+    samplePrompts.forEach((p) => {
+      (p as HTMLInputElement).disabled = false;
+    });
   }
 
   displayIdleJobs(idleJobs: Job[]) {
@@ -96,6 +136,7 @@ class View {
     (this.activeJob.querySelector(ACTIVE_JOB_TITLE_SELECTOR) as HTMLElement).innerHTML = job.name;
     (this.activeJob.querySelector(ACTIVE_JOB_DESCRIPTION_SELECTOR) as HTMLElement).innerHTML = job.description;
     (this.activeJob.querySelector(PROMPT_RESPONSE_SELECTOR) as HTMLElement).innerHTML = "";
+    this.enableActiveJobInputs();
   }
 
   displayPromptHistory(promptHistory: PromptEvent[]) {
@@ -132,6 +173,7 @@ class View {
 
   displayCompleted() {
     // ...
+    this.disableActiveJobInputs();
     this.activeJob.draggable = true;
   }
 }
