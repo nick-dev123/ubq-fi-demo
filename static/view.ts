@@ -51,7 +51,7 @@ class View {
 
     this.completedJobs.ondragover = allowDrop;
     this.completedJobs.ondrop = (ev: DragEvent) => {
-      drop(ev, this.demo.activeJob as Job);
+      drop(ev, this.demo.getActiveJob() as Job);
       this.clearActiveJob();
     };
     this.completedJobs.ondragover = dragover;
@@ -67,6 +67,7 @@ class View {
     title.innerHTML = "";
     description.innerHTML = "";
     response.innerHTML = "";
+    this.activeJob.draggable = false;
   }
 
   displayIdleJobs(idleJobs: Job[]) {

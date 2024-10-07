@@ -93,6 +93,8 @@ const elementPromptStart = `
             <ul>
         `;
 
+const elementPromptWalletWarning = '<span class="pl-mc">!</span> Please set your wallet address with the /wallet command first and try again.';
+
 export {
   elementIdle,
   elementCompleted,
@@ -101,4 +103,5 @@ export {
   elementPromptInvalid,
   elementPromptWalletRegistration,
   elementPromptWalletSuccess,
+  elementPromptWalletWarning,
 };

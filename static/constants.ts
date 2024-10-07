@@ -6,6 +6,7 @@ const PROMPT_INPUT_SELECTOR = "#active-job__prompt-input";
 const PROMPT_RESPONSE_SELECTOR = "#active-job__prompt-response";
 const ACTIVE_JOB_DESCRIPTION_SELECTOR = "#active-job__description";
 const ACTIVE_JOB_TITLE_SELECTOR = "#active-job__title";
+const DROPZONE_ACTIVE = "dropzone-active";
 
 const DEMO_JOB1_TITLE = "Sample Job";
 const DEMO_JOB1_DESCRIPTION = `
@@ -19,7 +20,15 @@ const DEMO_JOB1_DESCRIPTION = `
 `;
 const DEMO_JOB1_PRICING = 1200;
 const DEMO_JOB1_TIME = "<1 Week";
-const DEMO_JOB1_PRIORITY = 2;
+const DEMO_JOB1_PRIORITY = 3;
+
+const DEMO_JOB2_TITLE = "Easy job";
+const DEMO_JOB2_DESCRIPTION = `
+    <p>Congrats! You started your first task. Drag it to the completed jobs to CLAIM your reward.</p>
+`;
+const DEMO_JOB2_PRICING = 100;
+const DEMO_JOB2_TIME = "<1 Hour";
+const DEMO_JOB2_PRIORITY = 4;
 
 export {
   DEMO_SELECTOR,
@@ -33,6 +42,12 @@ export {
   DEMO_JOB1_PRICING,
   DEMO_JOB1_TIME,
   DEMO_JOB1_PRIORITY,
+  DEMO_JOB2_DESCRIPTION,
+  DEMO_JOB2_TITLE,
+  DEMO_JOB2_PRICING,
+  DEMO_JOB2_TIME,
+  DEMO_JOB2_PRIORITY,
   ACTIVE_JOB_DESCRIPTION_SELECTOR,
   ACTIVE_JOB_TITLE_SELECTOR,
+  DROPZONE_ACTIVE,
 };

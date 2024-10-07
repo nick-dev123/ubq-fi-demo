@@ -1,4 +1,15 @@
-import { DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_PRIORITY, DEMO_JOB1_TIME, DEMO_JOB1_TITLE } from "./constants";
+import {
+  DEMO_JOB1_DESCRIPTION,
+  DEMO_JOB1_PRICING,
+  DEMO_JOB1_PRIORITY,
+  DEMO_JOB1_TIME,
+  DEMO_JOB1_TITLE,
+  DEMO_JOB2_DESCRIPTION,
+  DEMO_JOB2_PRICING,
+  DEMO_JOB2_PRIORITY,
+  DEMO_JOB2_TIME,
+  DEMO_JOB2_TITLE,
+} from "./constants";
 import { CallbackFn, HtmlElement, HtmlElementModifiable, JobPriority, JobTime, PromptEvent, Status, User } from "./types";
 import { View } from "./view";
 
@@ -14,7 +25,7 @@ class Job {
   time: JobTime;
   priority: JobPriority;
   demo: Demo;
-  promptCallback: (demo: Demo, evt: PromptEvent) => boolean;
+  promptCallback: CallbackFn;
 
   /**
    * constructor description
@@ -24,7 +35,7 @@ class Job {
    * @param  {number} pricing Job pricing that is paid out the bounty hunter
    * @param  {JobTime} time Expected job completion time
    * @param  {JobPriority} priority Value between 1 and 4, higher number -> higher priority
-   * @param  {CallbackFn} promptCallback Gets called after every prompt, true return value represents a completed job
+   * @param  {CallbackFn} promptCallback Gets called at selection and after every prompt, true return value represents a completed job
    *            The callback functions receives the demo object and the last prompt event
    */
   constructor(demo: Demo, name: string, description: string, pricing: number, time: JobTime, priority: JobPriority, promptCallback: CallbackFn) {
@@ -267,6 +278,13 @@ class Demo {
     this._activeJob = job;
     this._view.displayIdleJobs(this._jobs.filter((job) => job.status === "idle"));
     this._view.displayActiveJob(job);
+
+    const isCompleted = job.promptCallback(this);
+    if (isCompleted) {
+      console.log(isCompleted);
+      job.status = "completed";
+      this._view.displayCompleted();
+    }
   }
 
   /**
@@ -306,12 +324,16 @@ class Demo {
    */
   createJobs() {
     this._jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_TIME, DEMO_JOB1_PRIORITY, demo1Logic));
-    this._jobs.push(new Job(this, DEMO_JOB1_TITLE, DEMO_JOB1_DESCRIPTION, DEMO_JOB1_PRICING, DEMO_JOB1_TIME, DEMO_JOB1_PRIORITY, demo1Logic));
+    this._jobs.push(new Job(this, DEMO_JOB2_TITLE, DEMO_JOB2_DESCRIPTION, DEMO_JOB2_PRICING, DEMO_JOB2_TIME, DEMO_JOB2_PRIORITY, demo2Logic));
     this._view.displayIdleJobs(this._jobs);
   }
 
   getUser() {
     return this._user;
+  }
+
+  getActiveJob() {
+    return this._activeJob;
   }
 
   setUserAddress(address: string) {
@@ -330,8 +352,16 @@ class Demo {
   }
 }
 
-function demo1Logic(demo: Demo, evt: PromptEvent) {
+function demo1Logic(demo: Demo, evt?: PromptEvent) {
+  if (!evt) {
+    return false;
+  }
   return !!(evt.command === "start" && demo.getUser().address);
+}
+
+function demo2Logic(demo: Demo, evt?: PromptEvent) {
+  console.log(demo, evt);
+  return true;
 }
 
 export async function mainModule() {
