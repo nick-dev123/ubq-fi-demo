@@ -10,17 +10,31 @@
     <h1>ubq.fi.demo</h1>
     <background></background>
     <main id="demo">
-      <div id="idle-jobs"></div>
+      <div id="idle-jobs">
+        <p id="idle-jobs__title">Jobs to Complete</p>
+        <div id="idle-jobs__container"></div>
+      </div>
       <div id="active-job">
-        <span id="active-job__title"></span>
-        <span id="active-job__description"></span>
+        <div id="active-job__title"></div>
+        <div id="active-job__description"></div>
         <div id="active-job__prompt-response"></div>
-        <form id="active-job__prompt-input">
-          <input type="text" id="myInput" placeholder="Enter text" />
-          <button type="submit">Submit</button>
+        <form class="active-job__prompt-input">
+          <div id="active-job__prompt-input__controls">
+            <input type="text" id="myInput" placeholder="Enter prompt" />
+            <button type="submit">Submit</button>
+          </div>
+          <ul id="active-job__prompt-input__prompts">
+            <li><button type="button">/start</button></li>
+            <li><button type="button">/stop</button></li>
+            <li><button type="button">/help</button></li>
+            <li><button type="button">/wallet</button></li>
+          </ul>
         </form>
       </div>
-      <div id="completed-jobs"></div>
+      <div id="completed-jobs">
+        <p id="completed-jobs__title">Completed Jobs</p>
+        <div class="completed-jobs__job"></div>
+      </div>
     </main>
     <script type="module" src="dist/main.js"></script>
   </body>
